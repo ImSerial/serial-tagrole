@@ -1,0 +1,7 @@
+# CONFIGURATION ENV :
+
+```
+TOKEN=
+CLIENT_ID=
+OWNER_ID=
+```
