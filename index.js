@@ -1,9 +1,3 @@
-// index.js — Bot Server Tag PRO + Estimation de scans
-// - Détection du Server Tag via user.primary_guild.identity_guild_id
-// - Synchronisation au démarrage, via /role, via /sync, et en temps réel
-// - Estimation du temps de scan
-// - SQLite + Discord.js v14
-
 const {
     Client,
     GatewayIntentBits,
@@ -14,9 +8,6 @@ const {
 const sqlite3 = require("sqlite3").verbose();
 require("dotenv").config();
 
-// ==========================
-// CONFIGURATION
-// ==========================
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -29,9 +20,6 @@ if (!TOKEN || !CLIENT_ID) {
 
 console.log("🔄 Démarrage du bot...");
 
-// ==========================
-// BASE DE DONNÉES SQLITE
-// ==========================
 
 const db = new sqlite3.Database("./database.sqlite");
 
@@ -70,10 +58,6 @@ function getGuildRole(guildId) {
     });
 }
 
-// ==========================
-// CLIENT DISCORD
-// ==========================
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -85,25 +69,21 @@ const client = new Client({
 // Cache des états tag
 const tagStatusCache = new Map();
 
-// ==========================
-// REGISTER SLASH COMMANDS
-// ==========================
 
 async function registerCommands() {
-    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    const rest = new REST({
+        version: "10"
+    }).setToken(TOKEN);
 
-    const commands = [
-        {
+    const commands = [{
             name: "role",
             description: "Configure le rôle donné à ceux qui équipent le tag du serveur",
-            options: [
-                {
-                    type: 8,
-                    name: "role",
-                    description: "Choisis le rôle récompense",
-                    required: true,
-                },
-            ],
+            options: [{
+                type: 8,
+                name: "role",
+                description: "Choisis le rôle récompense",
+                required: true,
+            }, ],
         },
         {
             name: "sync",
@@ -112,16 +92,15 @@ async function registerCommands() {
     ];
 
     try {
-        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+        await rest.put(Routes.applicationCommands(CLIENT_ID), {
+            body: commands
+        });
         console.log("✅ Commandes enregistrées !");
     } catch (err) {
         console.error("❌ Erreur en enregistrant les commandes :", err);
     }
 }
 
-// ==========================
-// /ROLE + ESTIMATION
-// ==========================
 
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
@@ -141,8 +120,7 @@ client.on("interactionCreate", async (interaction) => {
         const estimatedSeconds = Math.ceil(memberCount / 50);
 
         await interaction.reply({
-            content:
-                `💾 Le rôle <@&${role.id}> a été configuré.\n` +
+            content: `💾 Le rôle <@&${role.id}> a été configuré.\n` +
                 `🔄 Synchronisation complète en cours...\n` +
                 `⏳ Estimation : **~${estimatedSeconds} secondes** pour ${memberCount} membres.`,
             ephemeral: true,
@@ -153,10 +131,6 @@ client.on("interactionCreate", async (interaction) => {
 
         return;
     }
-
-    // ==========================
-    // /SYNC + ESTIMATION
-    // ==========================
 
     if (interaction.commandName === "sync") {
         if (interaction.user.id !== OWNER_ID) {
@@ -170,8 +144,7 @@ client.on("interactionCreate", async (interaction) => {
         const estimatedSeconds = Math.ceil(memberCount / 50);
 
         await interaction.reply({
-            content:
-                `🔄 Synchronisation complète lancée...\n` +
+            content: `🔄 Synchronisation complète lancée...\n` +
                 `⏳ Estimation : **~${estimatedSeconds} secondes** pour ${memberCount} membres.`,
             ephemeral: true,
         });
@@ -182,9 +155,6 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
-// ==========================
-// SYNC COMPLÈTE (SCAN TOTAL)
-// ==========================
 
 async function refreshAllMembers(guild) {
     console.log(`🔄 Scan du serveur "${guild.name}" (${guild.id})...`);
@@ -202,7 +172,9 @@ async function refreshAllMembers(guild) {
     }
 
     const members = await guild.members.fetch();
-    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    const rest = new REST({
+        version: "10"
+    }).setToken(TOKEN);
 
     for (const [memberId, member] of members) {
         try {
@@ -234,9 +206,6 @@ async function refreshAllMembers(guild) {
     console.log("✅ Scan terminé !");
 }
 
-// ==========================
-// TEMPS RÉEL : GUILD_MEMBER_UPDATE
-// ==========================
 
 client.on("raw", async (packet) => {
     if (packet.t !== "GUILD_MEMBER_UPDATE") return;
@@ -252,9 +221,9 @@ client.on("raw", async (packet) => {
     const hasTag = identityGuildId === guildId;
 
     const cacheKey = `${guildId}:${userId}`;
-    const previous = tagStatusCache.has(cacheKey)
-        ? tagStatusCache.get(cacheKey)
-        : null;
+    const previous = tagStatusCache.has(cacheKey) ?
+        tagStatusCache.get(cacheKey) :
+        null;
 
     tagStatusCache.set(cacheKey, hasTag);
 
@@ -289,9 +258,6 @@ client.on("raw", async (packet) => {
     }
 });
 
-// ==========================
-// READY + SCAN AU DÉMARRAGE
-// ==========================
 
 client.once("ready", async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
@@ -301,10 +267,6 @@ client.once("ready", async () => {
         refreshAllMembers(guild);
     }
 });
-
-// ==========================
-// CONNEXION
-// ==========================
 
 client.login(TOKEN).catch((err) => {
     console.error("❌ Erreur de connexion :", err);
