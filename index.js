@@ -11,7 +11,7 @@ require("dotenv").config();
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
-const OWNER_ID = process.env.OWNER_ID || "1133246357960921158";
+const OWNER_ID = process.env.OWNER_ID || "";
 
 if (!TOKEN || !CLIENT_ID) {
     console.error("❌ TOKEN ou CLIENT_ID manquant dans .env");
